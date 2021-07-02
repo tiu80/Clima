@@ -35,7 +35,6 @@ import java.util.Date;
 public class MainActivity extends AppCompatActivity {
     EditText ciudad;
     TextView resultado,climaac;
-    //private final String url ="http://api.openweathermap.org/data/2.5/weather";
     private final String url ="http://api.openweathermap.org/data/2.5/forecast";
     private final String appid ="5244eab018d02d88b9e9f662bf642b7c";
     DecimalFormat df = new DecimalFormat("#.##");
