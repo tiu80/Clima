@@ -3,7 +3,11 @@ package com.example.clima;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.accessibilityservice.GestureDescription;
+import android.annotation.SuppressLint;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -39,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private final String appid ="5244eab018d02d88b9e9f662bf642b7c";
     DecimalFormat df = new DecimalFormat("#.##");
     boolean hoy = true;
+    ProgressDialog pDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,8 +55,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void obtenerClima(View view) {
-        String tempUrl = "";
+
+        pDialog = new ProgressDialog(this);
+        pDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        pDialog.setCancelable(false);
+        pDialog.setMessage("Procesando...");
+        pDialog.setMax(100);
+
+
+        new obtieneDatosClima().execute();
+
+        /*String tempUrl = "";
         String city = ciudad.getText().toString().trim();
+
         if (city.equals("")) {
             resultado.setText("El campo ciudad no puede estar vacio");
         } else {
@@ -124,10 +140,137 @@ public class MainActivity extends AppCompatActivity {
             //devuelve los resultados
             RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
             requestQueue.add(stringRequest);
+        }*/
+    }
+
+
+    @SuppressLint("SimpleDateFormat") private class obtieneDatosClima extends AsyncTask<Void, Integer, String> {
+        @SuppressLint("SimpleDateFormat") protected String doInBackground(Void... params) {
+
+            String tempUrl = "";
+            String city = ciudad.getText().toString().trim();
+            StringRequest stringRequest = null;
+
+            if (city.equals("")) {
+                resultado.setText("El campo ciudad no puede estar vacio");
+            } else {
+                tempUrl = url + "?q=" + city + "&appid=" + appid;
+
+                stringRequest = new StringRequest(Request.Method.POST, tempUrl, new Response.Listener<String>() {
+
+                    @Override
+                    public void onResponse(String response) {
+
+                        String output = "", fechaws = "", fechaac = "";
+                        double temp = 0;
+                        int horaIgual = 0;
+                        hoy = true;
+
+                        try {
+                            JSONObject jsonResponse = new JSONObject(response);
+                            JSONArray jsonArray = jsonResponse.getJSONArray("list");
+
+                            fechaac = getDate().trim();
+
+                            for (int i = 0; i < jsonArray.length(); i++) {
+
+                                JSONObject item1 = jsonArray.getJSONObject(i);
+                                fechaws = item1.getString("dt_txt").toString().substring(0, 10);
+
+                                if (horaIgual == 0) {
+
+                                    JSONObject jsonObjectWeather = jsonArray.getJSONObject(i);
+                                    JSONObject main = jsonObjectWeather.getJSONObject("main");
+                                    temp = main.getInt("temp") - 273;
+
+                                    if (hoy == false) {
+                                        output += "Para la fecha:" + fechaws + " es "
+                                                + "Temp: " + df.format(temp) + " ºC" + "\n\n";
+                                    } else {
+                                        climaac.setText("La Temperatura actual es: " + df.format(temp) + " ºC");
+                                        hoy = false;
+                                    }
+
+                                    horaIgual = 1;
+
+                                } else {
+
+                                    if (!fechaws.trim().equals(fechaac)) {
+                                        fechaac = convertiraDate(fechaac);
+                                        horaIgual = 0;
+
+                                    }
+
+                                }
+
+                            }
+
+                            resultado.setTextColor(Color.rgb(0, 0, 0));
+                            resultado.setText(output);
+
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(getApplicationContext(), error.toString().trim(), Toast.LENGTH_SHORT).show();
+                    }
+
+                });
+                //devuelve los resultados
+                //RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+                //requestQueue.add(stringRequest);
+            }
+
+            StringRequest finalStringRequest = stringRequest;
+            runOnUiThread(new Runnable() {
+                public void run() {
+                    RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
+                    requestQueue.add(finalStringRequest);
+                }
+            });
+
+            return null;
+
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            int progreso = values[0].intValue();
+
+            pDialog.setMessage("Procesando...");
+            pDialog.setProgress(progreso);
+        }
+
+        @Override
+        protected void onPreExecute() {
+
+            pDialog.setOnCancelListener(new DialogInterface.OnCancelListener() {
+                public void onCancel(DialogInterface dialog) {
+
+                }
+            });
+
+            pDialog.setProgress(0);
+            pDialog.show();
+        }
+
+        protected void onPostExecute(String result)
+        {
+            super.onPostExecute(result);
+            pDialog.dismiss();
         }
     }
 
-        //obtiene la fecha de cada dia
+
+
+
+
+
+    //obtiene la fecha de cada dia
     private String getDate(){
         DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd");
         String date=dfDate.format(Calendar.getInstance().getTime());
