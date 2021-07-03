@@ -46,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
     ProgressDialog pDialog;
     DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd");
     String DIA[] = {"Domingo", "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado"};
-    String nombreDia;
+    String nombreDia, city;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,8 +65,13 @@ public class MainActivity extends AppCompatActivity {
         pDialog.setMessage("Procesando...");
         pDialog.setMax(100);
 
+        city = ciudad.getText().toString().trim();
 
-        new obtieneDatosClima().execute();
+        if (city.equals("")) {
+            resultado.setText("El campo ciudad no puede estar vacio");
+        } else {
+            new obtieneDatosClima().execute();
+        }
 
     }
 
@@ -75,12 +80,8 @@ public class MainActivity extends AppCompatActivity {
         @SuppressLint("SimpleDateFormat") protected String doInBackground(Void... params) {
 
             String tempUrl = "";
-            String city = ciudad.getText().toString().trim();
             StringRequest stringRequest = null;
 
-            if (city.equals("")) {
-                resultado.setText("El campo ciudad no puede estar vacio");
-            } else {
                 tempUrl = url + "?q=" + city + "&appid=" + appid;
 
                 stringRequest = new StringRequest(Request.Method.POST, tempUrl, new Response.Listener<String>() {
@@ -150,7 +151,6 @@ public class MainActivity extends AppCompatActivity {
                 //devuelve los resultados
                 //RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
                 //requestQueue.add(stringRequest);
-            }
 
             StringRequest finalStringRequest = stringRequest;
             runOnUiThread(new Runnable() {
